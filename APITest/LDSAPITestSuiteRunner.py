@@ -18,9 +18,15 @@ Created on 23/12/2013
 '''
 import unittest
 
-from APITest.LDSAPI import LDSAPI as T1
-from APITest.DataAPI import DataAPI as T2
-from APITest.SourceAPI import SourceAPI as T3
+#from APITest.LDSAPI import LDSAPI as T1
+from APIInterface.LDSAPI import DataAPI
+from APITest.TestDataAPI import DataTester as T2
+
+#from APIInterface.LDSAPI import SourceAPI
+#from APITest.TestSourceAPI import SourcesTester as T3
+
+#from APIInterface.LDSAPI import RedactionAPI
+#from APITest.TestRedactionAPI import RedactionTester as T4
 
 
 
@@ -32,8 +38,9 @@ class LDSAPITestSuite(unittest.TestSuite):
     def suite(self):
         suites = ()
         #suites += unittest.makeSuite(T1)
-        suites += unittest.makeSuite(T2)
-        suites += unittest.makeSuite(T3)
+        suites += unittest.makeSuite(T2, 'test')
+        #suites += unittest.makeSuite(T3)
+        #suites += unittest.makeSuite(T4)
 
         
         return unittest.TestSuite(suites)
@@ -41,7 +48,7 @@ class LDSAPITestSuite(unittest.TestSuite):
     
 def main():
     
-    suite  = unittest.TestSuite()
+    suite  = LDSAPITestSuite()
     
     runner = unittest.TextTestRunner()
     runner.run(suite)
