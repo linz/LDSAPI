@@ -8,9 +8,14 @@ Created on 17/12/2013
 
 import unittest
 import json
+import os
 
 
 from APIInterface.LDSAPI import SourceAPI
+from TestFileReader import FileReader
+
+cdir = os.path.join(os.path.dirname(__file__), '../')
+cfile = '.credentials'
 
 sources = (
     ("Alices' Mapinfo Server", "mapinfo", "No Proxy - No Auth", [], 3, "alice", "alicespassword", "https://alice.example.com/Mapinfo/rest/services", "@hourly"),
@@ -25,7 +30,8 @@ sources = (
 
 class SourcesTester(unittest.TestCase):
     def setUp(self):
-        self.api = SourceAPI()
+        self.api = SourceAPI(FileReader.creds,cdir+cfile)
+        self.api.setParams()
         
     def tearDown(self):
         self.api = None

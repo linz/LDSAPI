@@ -8,12 +8,13 @@ Created on 23/12/2013
 
 import unittest
 import json
+import os
 
 
 
 from APIInterface.LDSAPI import DataAPI
-from APIInterface.LDSAPI import SourceAPI
-from APIInterface.LDSAPI import RedactionAPI
+#from APIInterface.LDSAPI import SourceAPI
+#from APIInterface.LDSAPI import RedactionAPI
 from TestFileReader import FileReader
 
 
@@ -22,7 +23,7 @@ VER = 460
 TYP = 'iso'
 FMT = 'json'
    
-   
+cdir = os.path.join(os.path.dirname(__file__), '../')
 cfile = '.credentials'
 
 class DataTester(unittest.TestCase):
@@ -31,7 +32,8 @@ class DataTester(unittest.TestCase):
     
     def setUp(self):
         print '\n----------------------------------\n'
-        self.api = DataAPI(FileReader.creds,cfile)
+        self.api = DataAPI(FileReader.creds,cdir+cfile)
+        self.api.setParams()#sec, pth, host, format, id, version, type)
         
     def tearDown(self):
         self.api = None
