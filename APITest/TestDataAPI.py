@@ -16,24 +16,22 @@ from APIInterface.LDSAPI import DataAPI
 #from APIInterface.LDSAPI import SourceAPI
 #from APIInterface.LDSAPI import RedactionAPI
 from TestFileReader import FileReader
+from TestSuper import APITestCase
 
 
 ID = 455
 VER = 460
 TYP = 'iso'
 FMT = 'json'
-   
-cdir = os.path.join(os.path.dirname(__file__), '../')
-cfile = '.credentials'
 
-class DataTester(unittest.TestCase):
+class DataTester(APITestCase):
     
     avoid = ['dpu_draftversion','ddl_delete']
     
     def setUp(self):
-        print '\n----------------------------------\n'
-        self.api = DataAPI(FileReader.creds,cdir+cfile)
-        self.api.setParams()#sec, pth, host, format, id, version, type)
+        print 'D'#\n----------------------------------\n'
+        self.api = DataAPI(FileReader.creds,self.cdir+self.cfile)
+        self.api.setParams()
         
     def tearDown(self):
         self.api = None

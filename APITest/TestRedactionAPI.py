@@ -13,9 +13,9 @@ import os
 
 from APIInterface.LDSAPI import RedactionAPI
 from TestFileReader import FileReader
+from TestSuper import APITestCase
 
-cdir = os.path.join(os.path.dirname(__file__), '../')
-cfile = '.credentials'
+TESTID = 772
 
 sources = (
     ("Alices' Mapinfo Server", "mapinfo", "No Proxy - No Auth", [], 3, "alice", "alicespassword", "https://alice.example.com/Mapinfo/rest/services", "@hourly"),
@@ -28,10 +28,11 @@ sources = (
 )
 
 
-class RedactionTester(unittest.TestCase):
+class RedactionTester(APITestCase):
     def setUp(self):
-        self.api = RedactionAPI(FileReader.creds,cdir+cfile)
-        self.api.setParams()
+        print 'R'
+        self.api = RedactionAPI(FileReader.creds,self.cdir+self.cfile)
+        self.api.setParams(id=TESTID)
         
     def tearDown(self):
         self.api = None

@@ -465,6 +465,30 @@ class SourceAccess(APIAccess):
     def __init__(self,creds,ap_creds):
         super(SourceAccess,self).__init__(SourceAPI,creds,ap_creds)
         self.path = 'sgt_sources'
+        
+    def writeDetailFields(self):
+        pass
+    def writePermissionFields(self):
+        pass
+    def writeSelectedFields(self):
+        pass
+    def writePrimaryKeyFields(self):
+        pass
+    
+class RedactionAccess(APIAccess):
+    '''Convenience class for redacting api data'''
+    def __init__(self,creds,ap_creds):
+        super(RedactionAccess,self).__init__(RedactionAPI,creds,ap_creds)
+        self.path = 'sgt_sources'
+        
+    def redactDetailFields(self):
+        pass
+    def redactPermissionFields(self):
+        pass
+    def redactSelectedFields(self):
+        pass
+    def redactPrimaryKeyFields(self):
+        pass
     
 class DataAccess(APIAccess):
     '''Convenience class for accessing commonly needed data-api data'''
@@ -493,7 +517,7 @@ class DataAccess(APIAccess):
     def readDetailFields(self,i):
         '''All field from detail pages'''
         self.api.setParams(sec='detail',pth=self.dpath,host='lds-l',id=i)
-        return self.api.fetchPages()[0]       
+        return self.api.fetchPages()[0]
     
     def readPermissionFields(self,i):
         '''All field from permission pages'''
@@ -508,7 +532,7 @@ class DataAccess(APIAccess):
         
         for i in self.readAllIDs():
         #print 'WARNING. READING LDS-API-ID SUBSET'
-        #for i in [1993,2052,1293,2100]:#[1993,1996,1624,2268,626,407]:
+        #for i in [1572,1993,2052,1293,2100]:#[1993,1996,1624,2268,626,407]:
             detail[str(i)] = {}
             if 'data' in pagereq:
                 try:
@@ -569,7 +593,7 @@ class DataAccess(APIAccess):
         res = [i for i in d]
         print res
     
-class _testfuncs(object):
+class APIFunctionTest(object):
     '''Class will not run as-is but illustrates by example api use and the paging mechanism'''
     credsfile = '../.credentials'
     
@@ -624,12 +648,13 @@ def searchfile(sfile,skey,default=None):
         
     
 def main():
+    global REDIRECT
     if REDIRECT:
         import BindingIPHandler as REDIRECT
         bw = REDIRECT.BindableWrapper()
         bw.getLocalIP(True)
 
-    t = _testfuncs()
+    t = APIFunctionTest()
     #print t._getLastPubLayers(lk='raster')
     #t._testSA()
     t._testDA()

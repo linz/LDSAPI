@@ -10,7 +10,15 @@ This module is a hack wrapping LXML because Py2.6 doesn't support namespaces dec
 import re
 import sys
 
-import urllib2 as U2
+PYVER3 = sys.version_info > (3,)
+
+if PYVER3:
+    import urllib.request as u_lib
+    from urllib.error import HTTPError
+else:
+    #import urllib2 as u_lib
+    #from urllib2 import HTTPError
+    pass
 
 from lxml import etree
 
@@ -63,20 +71,20 @@ class LXMLtree(object):
         try:
             if p=='fromstring': etp = self._parse_f(content)    #parse using string method
             else: etp = self._parse_p(content,p)                #parse normally or using provided parser
-        except U2.HTTPError as he:
-            raise #but this won't happen because LXML pushed HTTP errors up to IO errors
+        except u_lib.HTTPError as he:
+            raise #but this won't happen because LXML pushes HTTP errors up to IO errors
         except IOError as ioe:
             if re.search('failed to load HTTP resource', ioe.message):
-                raise U2.HTTPError(content, 429, 'Possible HTTP429 Rate Limiting Error. '+ioe.message, None, None)
-            raise U2.HTTPError(content, 404, 'Probable HTTP Error. '+ioe.message, None, None)
+                raise u_lib.HTTPError(content, 429, 'IOE. Possible HTTP429 Rate Limiting Error. '+ioe.message, None, None)
+            raise u_lib.HTTPError(content, 404, 'IOE. Probable HTTP Error. '+ioe.message, None, None)
         except Exception as e:
             raise
         return etp
     
     def _parse_f(self,content):
-        res = U2.urlopen(content).read()
+        res = u_lib.urlopen(content).read()
         if re.search('API rate limit exceeded',res):
-            raise U2.HTTPError(content, 429, 'Masked HTTP429 Rate Limiting Error. ', None, None)
+            raise u_lib.HTTPError(content, 429, 'Masked HTTP429 Rate Limiting Error. ', None, None)
         return etree.fromstring(res).getroottree()
 
     def _parse_p(self,content,p):
