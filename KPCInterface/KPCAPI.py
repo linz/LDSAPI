@@ -29,10 +29,10 @@ LayerInfo = namedtuple('LayerInfo', 'title id version versions dates files')
 class LayerRef(object):
     layeridmap = {}
     
-    def __init__(self,client):
+    def __init__(self,client,reload):
         #init name and id refs
         self.client = client
-        if RELOAD_INDEX or not self._load():
+        if reload or RELOAD_INDEX or not self._load():
             self._indexLayers()
             self._dump()
         
@@ -40,8 +40,10 @@ class LayerRef(object):
         '''query the catalog/layer obj for layer name id pairs returning dict indexed by name (for easier metadata matching)'''
         #NB. Catalog layers not necessarily complete
         lsrc = self.client.catalog.list if stype=='layer' else self.client.layers.list
+        #for i in self.client.catalog.list(): print('CL',i)
+        #for i in self.client.layers.list(): print('LL',i)
         for ly in lsrc():#.filter(type='layer')[:10]:
-            print('Li',ly)            
+            print('Ly',ly) 
             dd = {'cpub':getattr(ly,'published_at',None), 
                   'fpub':getattr(ly,'first_published_at',None),
                   'crt':getattr(ly,'created_at',None),
