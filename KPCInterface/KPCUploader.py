@@ -11,8 +11,13 @@ import sys
 import difflib
 import time
 
-THISF = os.path.normpath(os.path.dirname(__file__))
-sys.path.append(os.path.abspath(os.path.join(THISF,'../../../python-client')))
+from lxml import etree
+from collections import namedtuple
+from contextlib import closing
+from functools import wraps, partial
+
+#THISF = os.path.normpath(os.path.dirname(__file__))
+#sys.path.append(os.path.abspath(os.path.join(THISF,'../../../python-client')))
 
 import koordinates
 from koordinates.exceptions import ServerError
@@ -20,23 +25,15 @@ from koordinates.layers import LayerData
 
 #from APIInterface.LDSAPI2 import DataAccess
 
-
 if os.name=='posix':
     DIRECT_COPY = False
     import smbc
 else:
     DIRECT_COPY = True
     
-from collections import namedtuple
-from contextlib import closing   
-from lxml import etree
-from functools import wraps, partial
-
-sys.path.append(os.path.abspath(os.path.join(THISF,"../KPCInterface")))
-
-from KPCAPI import LayerInfo, LayerRef, Authentication
-from KPCAPI import LDS_TEST,LDS_LIVE
-
+from KPCInterface.KPCAPI import LayerInfo, LayerRef
+from KPCInterface.KPCAPI import LDS_TEST,LDS_LIVE
+from KPCInterface.AuthReader import Authentication,ConfigAuthentication
 
 p0 = 'gmd:MD_Metadata/' #don't use since first element is root and not found in xpath/find espr
 p1 = 'gmd:identificationInfo/gmd:MD_DataIdentification/'
@@ -63,8 +60,8 @@ NS = {'xlink'   : 'http://www.w3.org/1999/xlink',
        'v'       : 'http://wfs.data.linz.govt.nz',
        'lnz'     : 'http://data.linz.govt.nz'}
 
-#groups added manuall from https://data-test.linz.govt.nz/services/api/v1/groups/
-SOURCE_DEFS = {'electoral':{'smb_server':'bde_server','smb_path':'data,bde',
+#groups added manually from https://data-test.linz.govt.nz/services/api/v1/groups/
+DEFINITIONS = {'electoral':{'smb_server':'bde_server','smb_path':'data,bde',
                       'source_id':33,'datasource_id':0,'group_id':101},
                'topo':{'smb_server':'lds_data_staging','smb_path':'data,topo,LDS_Topo_SHAPE,NZ-Mainland-Topo50',
                        'source_id':603,'datasource_id':193789,'group_id':103},
@@ -77,6 +74,9 @@ SOURCE_DEFS = {'electoral':{'smb_server':'bde_server','smb_path':'data,bde',
 SHP_SUFFIXES = ('cpg','dbf','xml','prj','shp','shx')
 
 LOGGER = None
+CONFIG = None
+UICONFIG = None
+
 CREDS = {}
 KEY = ''
 EXACT = True
@@ -116,7 +116,7 @@ class LDSPushController(object):
         #success = True
         missing = None
         fgroup = os.path.expanduser(fgroup)
-        self.connection = self.connector(SOURCE_DEFS[self.user_group]['smb_server'],SOURCE_DEFS[self.user_group]['smb_path'])
+        self.connection = self.connector(DEFINITIONS[self.user_group]['smb_server'],DEFINITIONS[self.user_group]['smb_path'])
         
         localpath = os.path.dirname(fgroup)
         localbase = os.path.basename(fgroup)
@@ -203,9 +203,9 @@ class LDSPushController(object):
         LOGGER.emit('Create Layer {}'.format(linfo.id))
         layer = koordinates.Layer()
         layer.title = linfo.title
-        layer.group = SOURCE_DEFS[self.user_group]['group_id']  
+        layer.group = DEFINITIONS[self.user_group]['group_id']  
         raise Exception('Cant create new layers without first adding a datasource')      
-        layer.data = LayerData(datasources=[SOURCE_DEFS[self.user_group]['datasource_id']])
+        layer.data = LayerData(datasources=[DEFINITIONS[self.user_group]['datasource_id']])
         new_draft = self.client.layers.create(layer)
         LOGGER.emit('Import {}'.format(layer.id))
         new_draft.start_import()
@@ -417,25 +417,24 @@ class SMBConnector(Connector):
     def fetch(self,lfn):
         return super(SMBConnector,self).fetch(lfn)
 
-
-
-
+    
 class LDSUploader(object):
     '''file transfer and api controller'''
     
-    def __init__(self,logger,ow=False,ul=False):
+    def __init__(self,logger,ow=False,up=False):
         '''set up authentication and connectivity'''
+        AA = ConfigAuthentication(CONFIG) if CONFIG else Authentication
         global LOGGER 
         LOGGER = logger
         global OVERWRITE
-        OVERWRITE = ow     
+        OVERWRITE = next((el for el in [ow,UICONFIG.opt_overwrite,CONFIG.server_overwrite] if el is not None),None)
         global KEY
-        KEY = Authentication.apikey()
+        KEY = AA.apikey()
         global CREDS
-        CREDS['u'],CREDS['p'],CREDS['d'] = Authentication.creds()
+        CREDS['u'],CREDS['p'],CREDS['d'] = AA.creds()
         
         self.client = koordinates.Client(host=LDS_TEST, token=KEY)
-        self.lpc = LDSPushController(self.client,ul)
+        self.lpc = LDSPushController(self.client,up)
         
     def setLayer(self,fg):
         self.fgroup = fg#list(set([x[:x.rfind('.')] for x in TF616]))[0]
@@ -443,16 +442,33 @@ class LDSUploader(object):
     def setGroup(self,ug):
         self.ugroup = ug
         
-    def upload(self):
-        '''upload a single layer'''        
+    def upload(self,layer=None):
+        '''upload a single layer'''
         #assume we are given a name a path and a type, tunnel_cl, c:\users\myfiles\, topo
         #append path and name to get a path+base
+        if layer: self.setLayer(layer)
         self.lpc.user_group = self.ugroup
         self.lpc.filepush(self.fgroup) #*self.testid)
         
     def redact(self):
         pass
-         
+    
+class LDSUploaderWrapper(LDSUploader):
+    '''Wrapper to pass alt config object args'''
+    def __init__(self,logger,uiconfig,config):
+        setConfig(uiconfig,config)
+        super(LDSUploaderWrapper,self).__init__(logger,uiconfig.opt_overwrite,uiconfig.opt_update)
+        self.setGroup(uiconfig.val_grp)
+        
+def setConfig(uiconfig,config):
+    global CONFIG
+    CONFIG = config
+    global UICONFIG
+    UICONFIG = uiconfig
+    global DEFINITIONS
+    DEFINITIONS = config.remote_defs
+
+ 
 def _g_auth_cb_fn(server, share, workgroup, username, password):
     return (CREDS['d'].upper(),CREDS['u'],CREDS['p'])
  
