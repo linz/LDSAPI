@@ -78,9 +78,9 @@ class ConfigAuthentication(Authentication):
     def userpass(self,sect='remote'):
         return (self.conf.d[sect]['user'], self.conf.d[sect]['pass'])    
     
-    def apikey(self):
+    def apikey(self,sect='server'):
         '''returns a single know apikey, doesnt do key cycling'''
-        return self.conf.d['server']['key']
+        return self.conf.d[sect]['key']
 
 
                 

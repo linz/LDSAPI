@@ -84,6 +84,7 @@ OVERWRITE = False
 WAIT_INTERVAL = 5
 MATCH_THRESHOLD = 1
 
+
 class LayerMatchException(Exception): pass
      
             
@@ -141,10 +142,10 @@ class LDSPushController(object):
         lref = self._listMatch(title,self.lr.layeridmap, MATCH_THRESHOLD)
         LOGGER.emit('Matched SHP title "{}" with LDS layer name "{}" - t={}'.format(title,lref[0],MATCH_THRESHOLD))
         if not lref:
-            self.createLayer(LayerInfo(title=title,id=None,version=None,versions=[],dates=None, files=available))
+            return self.createLayer(LayerInfo(title=title,id=None,version=None,versions=[],dates=None, files=available))
             #raise LayerMatchException('Cannot match layer name {}'.format(title))
         else:
-            self.updateLayer(self.lr.layeridmap[lref[0]]._replace(files = available))
+            return self.updateLayer(self.lr.layeridmap[lref[0]]._replace(files = available))
             
 
 
@@ -193,10 +194,10 @@ class LDSPushController(object):
                 vers = self._gerVer(new_draft)
                 new_status = self._getStatus(vers['draft'], wait=True)
             if new_draft and new_status=='ok' and (not vers['published'] or OVERWRITE): 
-                self.publishDraft(new_draft)
+                return self.publishDraft(new_draft)
         
     def createLayer(self,linfo):
-        '''create a new layer in an existng datasource'''
+        '''create a new (draft) layer in an existng datasource'''
         new_draft,new_status = None,None
         self.connection.synchronise(linfo,update=False)
         #create new layer
@@ -204,7 +205,7 @@ class LDSPushController(object):
         layer = koordinates.Layer()
         layer.title = linfo.title
         layer.group = DEFINITIONS[self.user_group]['group_id']  
-        raise Exception('Cant create new layers without first adding a datasource')      
+        raise Exception('Cant create new layers without first adding a datasource')
         layer.data = LayerData(datasources=[DEFINITIONS[self.user_group]['datasource_id']])
         new_draft = self.client.layers.create(layer)
         LOGGER.emit('Import {}'.format(layer.id))
@@ -213,7 +214,7 @@ class LDSPushController(object):
         vers = self._gerVer(new_draft)
         new_status = self._getStatus(vers['draft'], wait=True)
         if new_draft and new_status=='ok' and (not vers['published'] or OVERWRITE): 
-            self.publishDraft(new_draft)
+            return self.publishDraft(new_draft)
     
     def createDraft(self,layer,linfo):
         '''create a new draft and sets its metadata'''
