@@ -32,7 +32,7 @@ class BindableWrapper(object):
             
         self.ipaddr = ipa
         IPADDR = ipa
-        print 'setting ip to',ipa
+        print ('setting ip to',ipa)
         return ipa
             
     @staticmethod        
@@ -47,7 +47,7 @@ class BindableWrapper(object):
 class BindableHTTPConnection(httplib.HTTPConnection):
     def connect(self):
         """Connect to the host and port specified in __init__."""
-        print 'binding http ip',self.source_ip
+        print ('binding http ip',self.source_ip)
         self.sock = socket.socket()
         self.sock.bind((self.source_ip, 0))
         if isinstance(self.timeout, float):
@@ -58,7 +58,7 @@ class BindableHTTPConnection(httplib.HTTPConnection):
 class BindableHTTPSConnection(httplib.HTTPSConnection):
     def connect(self):
         """Connect to the host and port specified in __init__."""
-        print 'binding https ip',self.source_ip
+        print ('binding https ip',self.source_ip)
         self.sock = socket.socket()
         self.sock.bind((self.source_ip, 0))
         if isinstance(self.timeout, float):

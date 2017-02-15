@@ -127,7 +127,7 @@ class LXMLelem(object):
         return self._elem.get(path)    
     
     def items(self):
-        return self._elem.items()
+        return list(self._elem.items())
     
     def find(self,url,namespaces=None):
         '''returns element'''

@@ -12,8 +12,8 @@ import os
 
 
 from APIInterface.LDSAPI import RedactionAPI
-from TestFileReader import FileReader
-from TestSuper import APITestCase
+from .TestFileReader import FileReader
+from .TestSuper import APITestCase
 
 TESTID = 772
 
@@ -30,7 +30,7 @@ sources = (
 
 class RedactionTester(APITestCase):
     def setUp(self):
-        print 'R'
+        print('R')
         self.api = RedactionAPI(FileReader.creds,self.cdir+self.cfile)
         self.api.setParams(id=TESTID)
         
@@ -49,7 +49,7 @@ class RedactionTester(APITestCase):
         be = json.dumps(self.api.res)
         pp = json.dumps(self.api.res, sort_keys=True, indent=4, separators=(',', ': '))
         
-        print be,pp
+        print(be,pp)
 
     
 if __name__ == '__main__':

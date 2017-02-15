@@ -3,7 +3,7 @@ Created on 6/01/2014
 
 @author: jramsay
 '''
-from ConfigParser import ConfigParser, NoSectionError, NoOptionError, ParsingError,  Error
+from configparser import ConfigParser, NoSectionError, NoOptionError, ParsingError,  Error
 import re
 
 class CReader(object):
@@ -36,10 +36,10 @@ class CReader(object):
             try:
                 val = self.cp.get(sec,str(o))
             except NoSectionError:
-                print 'No Sec',sec
+                print('No Sec',sec)
                 raise
             except NoOptionError as noe:
-                print 'No Opt',str(o)
+                print('No Opt',str(o))
                 raise
             ovdic[str(o)] = val
         return ovdic

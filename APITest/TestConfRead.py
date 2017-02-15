@@ -24,11 +24,11 @@ class DataTester(unittest.TestCase):
         
     def test_10_ReadConfSecs(self):
         for s in self.cr.listSections():
-            print 'Sec',s
+            print('Sec',s)
             
     def test_20_ReadConfOpts(self):
         for s in self.cr.listSections():
-            print 'Sec',s,'Opt',self.cr.readHDSection(s)
+            print('Sec',s,'Opt',self.cr.readHDSection(s))
 
 
 

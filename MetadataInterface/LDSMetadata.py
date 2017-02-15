@@ -163,7 +163,7 @@ class LDSMeta(object):
                 sdoc = LXMLetree().parse(scontent).gettree()
                 schema = LXMLetree().XMLSchema(sdoc)
         except XMLSchemaParseError as xse:            
-            print 'WFSMeta XMLSchemaParseError causing Failure - {0}\nThis usually indicates a libxml2<2.7.8 problem'.format(xse)
+            print('WFSMeta XMLSchemaParseError causing Failure - {0}\nThis usually indicates a libxml2<2.7.8 problem'.format(xse))
             self.checklog.error('WFSxs - {0}'.format(xse))
         
         return schema
@@ -220,16 +220,16 @@ class LDSMeta(object):
                         time.sleep(SLEEP_TIME)
                     retry = True
                     continue
-                print 'WFSMeta {0} Failure - {1}'.format(lid,he)
+                print('WFSMeta {0} Failure - {1}'.format(lid,he))
                 self.checklog.error('WFSm0h - {0}/{1}\n{2} on server {3}'.format(lid,he,kmask(url),svr))
             except WFSServiceException as we:
-                print 'WFSMeta {0} XSD Failure - {1}'.format(lid,we)
+                print('WFSMeta {0} XSD Failure - {1}'.format(lid,we))
                 self.checklog.error('WFSm0se - {0}/{1}\n{2} on server {3}'.format(lid,we,kmask(url),svr))
             except XMLSyntaxError as xe:
-                print 'WFSMeta {0} XMLSyntaxError causing Parse Failure - {1}'.format(lid,xe)
+                print('WFSMeta {0} XMLSyntaxError causing Parse Failure - {1}'.format(lid,xe))
                 self.checklog.error('WFSm0x - {0}/{1}\n{2}\n{3} on server {4}'.format(lid,xe,kmask(url),ct[:100],svr))
             except U2.URLError as ue:
-                print 'WFS0ue {0} URLError - {1}'.format(lid,ue)
+                print('WFS0ue {0} URLError - {1}'.format(lid,ue))
                 if isinstance(ue.reason, socket.timeout):
                     self.checklog.error('WFS0uet - {0}/{1}\n{2} on server {3}. Retry'.format(lid,ue,kmask(url),svr))
                     retry = True
@@ -237,7 +237,7 @@ class LDSMeta(object):
                 else:
                     self.checklog.error('WFS0ueo - {0}/{1}\n{2} on server {3}'.format(lid,ue,kmask(url),svr))
             except Exception as ee:
-                print 'WFS0ee {0} Exception - {1}'.format(lid,ee)
+                print('WFS0ee {0} Exception - {1}'.format(lid,ee))
                 self.checklog.error('WFS0ee - {0}/{1}\n{2} on server {3}'.format(lid,ee,kmask(url),svr))
                     
 

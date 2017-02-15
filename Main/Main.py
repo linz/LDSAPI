@@ -11,7 +11,7 @@ from APIInterface.LDSAPI import SourceAPI
 from APIInterface.LDSAPI import DataAPI
 from APIInterface.LDSAPI import RedactionAPI
 
-from Main import CReader
+from .Main import CReader
 from APIInterface.RFC import RFC2388, RequestGenerator
 
 cat = []
@@ -114,27 +114,27 @@ class Publish(APIOperation):
     def setSRC(self):
         self.api.connect(head=self.cr.readSecOpt('fakedata1', 'header'), data=self.cr.readSecOpt('fakedata1', 'data'))
         ll = json.loads(self.api.res.read())
-        print ll    
+        print(ll)    
         
     def pushSRC(self):
         self.api.connect(head=self.cr.readSecOpt('fakedata2', 'header'), data=self.cr.readSecOpt('fakedata2', 'data'))
         ll = json.loads(self.api.res.read())
-        print ll
+        print(ll)
 
     def buildContent(self):
         p = self.cr.readArcGISSection('agdata')
         c = RequestGenerator.buildContentArcGIS(p['uname'],p['sname'],p['ctype'],p['desc'],p['cats'],p['url'],p['opts'],p['scan'])
-        print c
+        print(c)
         
         q = self.cr.readArcGISSection('pgdata')
         d = RequestGenerator.buildContentArcGIS(q['uname'],q['sname'],q['ctype'],q['desc'],q['cats'],q['url'],q['opts'],q['scan'])
-        print d
+        print(d)
         
         rfc = RFC2388()
         head = rfc.headGenerator()
         data = rfc.dataGenerator((c,d))
-        print head
-        print data
+        print(head)
+        print(data)
         
         return head,data
     

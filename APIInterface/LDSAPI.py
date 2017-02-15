@@ -185,16 +185,16 @@ class LDSAPI(object):
                 break
             except HTTPError as ee:
                 if re.search('429',str(ee)):
-                    print 'RateLimit Error {0}. Sleeping for {1} seconds awaiting 429 expiry. Attempt {2}'.format(ee,SLEEP_TIME,MAX_RETRY_ATTEMPTS-retry)
+                    print ('RateLimit Error {0}. Sleeping for {1} seconds awaiting 429 expiry. Attempt {2}'.format(ee,SLEEP_TIME,MAX_RETRY_ATTEMPTS-retry))
                     time.sleep(SLEEP_TIME)
                     retry -= 1
                     continue
                 elif re.search('401|500',str(ee)):
-                    print 'HTTP Error {0} Returns {1}. Attempt {2}'.format(self.getRequest().get_full_url(),ee,MAX_RETRY_ATTEMPTS-retry)
+                    print ('HTTP Error {0} Returns {1}. Attempt {2}'.format(self.getRequest().get_full_url(),ee,MAX_RETRY_ATTEMPTS-retry))
                     retry -= 1
                     continue
                 else:
-                    print 'Error with request {0} returns {1}'.format(self.getRequest().get_full_url(),ee)
+                    print ('Error with request {0} returns {1}'.format(self.getRequest().get_full_url(),ee))
 
             except KeyError as ee:
                 #redundant now since link keyerror caught in parseHeaders
@@ -241,16 +241,16 @@ class LDSAPI(object):
         return upd
     
     def dispReq(self,req):
-        print 'Request\n-------\n'
-        print req.get_full_url(),'auth',req.get_header('Authorization')
+        print ('Request\n-------\n')
+        print (req.get_full_url(),'auth',req.get_header('Authorization'))
         
     def dispRes(self,res):
-        print 'Response\n--------\n'
-        print res.info()
+        print ('Response\n--------\n')
+        print (res.info())
     
     def dispJSON(self,res):
         for l in json.loads(res.read()):
-            print '{0} - {1}\n'.format(l[0],l[1])
+            print ('{0} - {1}\n'.format(l[0],l[1]))
         
     def _populate(self,data):
         return json.dumps({"name": data[0],"type": data[1],"description": data[2], 
@@ -554,12 +554,12 @@ class DataAccess(APIAccess):
 
                 except IndexError as ie:
                     #not raising this as an error since it only occurs on 'test' layers
-                    print '{0} error getting {1},{2}'.format(ie,d['id'],d['name'])
+                    print ('{0} error getting {1},{2}'.format(ie,d['id'],d['name']))
                 except TypeError as te:
-                    print '{0} error on layer {1}/{2}'.format(te,d['id'],d['name'])
+                    print ('{0} error on layer {1}/{2}'.format(te,d['id'],d['name']))
                     continue
                 except Exception as e:
-                    print '{0} error on layer {1}/{2}'.format(e,d['id'],d['name'])
+                    print ('{0} error on layer {1}/{2}'.format(e,d['id'],d['name']))
                     raise
             
             if 'permission' in pagereq:
@@ -577,12 +577,12 @@ class DataAccess(APIAccess):
 
                 except IndexError as ie:
                     #not raising this as an error since it only occurs on 'test' layers
-                    print '{0} error getting {1},{2}'.format(ie,i,p['name'])
+                    print ('{0} error getting {1},{2}'.format(ie,i,p['name']))
                 except TypeError as te:
-                    print '{0} error on layer {1}/{2}'.format(te,i,p['name'])
+                    print ('{0} error on layer {1}/{2}'.format(te,i,p['name']))
                     continue
                 except Exception as e:
-                    print '{0} error on layer {1}/{2}'.format(e,d['id'],d['name'])
+                    print ('{0} error on layer {1}/{2}'.format(e,d['id'],d['name']))
                     raise                
 
         return detail,herror
@@ -591,7 +591,7 @@ class DataAccess(APIAccess):
         '''Read PrimaryKey field from detail pages'''
         d,_ = self.readSelectedFields(pagereq=('data',))
         res = [i for i in d]
-        print res
+        print (res)
     
 class APIFunctionTest(object):
     '''Class will not run as-is but illustrates by example api use and the paging mechanism'''
@@ -627,7 +627,7 @@ class APIFunctionTest(object):
         res = sa.readAllPages()
         lsaids = [(r['id'],r['last_scanned_at']) for r in res if r['last_scanned_at']]
         for lid,dt in lsaids:
-            print 'layer {} last scanned at {}'.format(lid,dt)    
+            print ('layer {} last scanned at {}'.format(lid,dt))    
             
     def _testDA(self):
         da = DataAccess(creds,self.credsfile)

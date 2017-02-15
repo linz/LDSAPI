@@ -12,8 +12,8 @@ import os
 
 
 from APIInterface.LDSAPI import SourceAPI
-from TestFileReader import FileReader
-from TestSuper import APITestCase
+from .TestFileReader import FileReader
+from .TestSuper import APITestCase
 
 sources = (
     ("Alices' Mapinfo Server", "mapinfo", "No Proxy - No Auth", [], 3, "alice", "alicespassword", "https://alice.example.com/Mapinfo/rest/services", "@hourly"),
@@ -28,7 +28,7 @@ sources = (
 
 class SourcesTester(APITestCase):
     def setUp(self):
-        print 'S'
+        print('S')
         self.api = SourceAPI(FileReader.creds,self.cdir+self.cfile)
         self.api.setParams()
         
@@ -47,7 +47,7 @@ class SourcesTester(APITestCase):
         be = json.dumps(self.api.res)
         pp = json.dumps(self.api.res, sort_keys=True, indent=4, separators=(',', ': '))
         
-        print be,pp
+        print(be,pp)
 
     
 if __name__ == '__main__':
