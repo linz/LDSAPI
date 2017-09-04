@@ -13,8 +13,10 @@ from urllib2 import Request, base64, HTTPError
 from abc import ABCMeta, abstractmethod
 import json
 import re
+import os
 import datetime as DT
 import time
+
 #from Main import CReader
 
 #request = urllib2.Request("http://api.foursquare.com/v1/user")
@@ -27,50 +29,61 @@ SLEEP_TIME = 5*60
 SLEEP_RETRY = 5
 MAX_RETRY_ATTEMPTS = 10
 
-
+KEYINDEX = 0
 
 class LDSAPI(object):
-    
+
     __metaclass__ = ABCMeta
+
+    url = {'lds-l': 'data.linz.govt.nz',
+           'lds-t': 'data-test.linz.govt.nz',
+           'mfe-t': 'mfe.data-test.linz.govt.nz',
+           'apiary': 'private-cbd7-koordinates.apiary.io',
+           'koordinates': 'koordinates.com',
+           'ambury': 'ambury-ldsl.kx.gd'}
+    url_def = 'lds-l'
+
+    pxy = {'linz': 'webproxy1.ad.linz.govt.nz:3128',
+           'local': '127.0.0.1:3128'}
+    pxy_def = 'local'
     
-    url = {'lds-l':'data.linz.govt.nz',
-           'lds-t':'data-test.linz.govt.nz',
-           'mfe-t':'mfe.data-test.linz.govt.nz',
-           'apiary':'private-cbd7-koordinates.apiary.io',
-           'koordinates':'koordinates.com'}
+    ath = {'key':'.api_llckey',
+           'basic':'.api_credentials'}
+    ath_def = 'key'
     
-    pxy = {'linz':'webproxy1.ad.linz.govt.nz:3128',
-           'local':'127.0.0.1:3128'}
-    
-    def __init__(self,creds,cfile):
-        
+    def __init__(self):#, creds, cfile):
+
         self.cookies = cookielib.LWPCookieJar()
         #//
-        self.setCredentials(*creds(cfile))
-        #\\
-        
-        #--------------------------------------------
-        #cr = CReader('../.scrt')
-        #aauth = cr.readUPSection('local')     #123
-        #pauth = cr.readUPSection('linzcorp')  #pin
-        
-        #self.b64a = self.encode(aauth)
-        #self.b64p = self.encode(pauth)
-        
-        #self.openerstrs_linz = (pxy['linz'],pauth[0],pauth[1])
-        self.openerstrs_ntlm = (self.pxy['local'])
-        
-        #self.setParams()
-        
+
+        self.setProxyRef(self.pxy_def)
+        # cant set auth ecause we dont know yet what auth type to use, doesnt make sense to set up on default
+        #self.setAuthentication(creds, self.ath[self.ath_def], self.ath_def)
+
+
     @abstractmethod
     def setParams(self):
         '''abstract host/path setting method'''
+
+    def setProxyRef(self, pref):
+        self.openerstrs_ntlm = (self.pxy[pref])
         
-    def setCredentials(self,u,p,d=None):
+    def setAuthentication(self, creds, cfile, auth):
+        if auth == 'basic':
+            self.setCredentials(*creds(cfile))
+        elif auth == 'key':
+            self.setKey(creds(cfile))
+        else:
+            raise Exception('Incorrect auth configuration supplied')
+        
+    def setCredentials(self, u, p, d=None):
         self.usr = u
         self.pwd = p
         self.dom = d
-        self.b64a = self.encode({'user':u,'pass':p,'domain':d} if d else {'user':u,'pass':p})
+        self.b64a = self.encode({'user': u, 'pass': p, 'domain': d} if d else {'user': u, 'pass': p})
+
+    def setKey(self, k):
+        self.key = k
         
     def setRequest(self,req):
         self.req = req
@@ -124,7 +137,7 @@ class LDSAPI(object):
             s = re.search(relist[k],'|'.join(head))
             if s: h[k] = s.group(1)
 
-        #---------------------
+        # ---------------------
         lnlist = {'sort-name':'<(http.*?)>;\s+rel="sort-name"',
                   'sort-name-desc':'<(http.*?)>;\s+rel="sort-name-desc"',
                   'page-previous':'<(http.*?)>;\s+rel="page-previous"',
@@ -163,19 +176,25 @@ class LDSAPI(object):
             handlers += [urllib2.ProxyBasicAuthHandler(pm),]
         
         return urllib2.build_opener(*handlers)
-    
-    def connect(self,plus='',head=None,data={}):
+
+
+    def connect(self, plus='', head=None, data={}):
         #self.path='/services/api/v1/layers/{id}/versions/{version}/import/'
-        self.setRequest(Request('https://{0}{1}{2}'.format(self.host,self.path,plus)))
+        self.setRequest(Request('https://{0}{1}{2}'.format(self.host, self.path, plus)))
         
-        self.getRequest().add_header("Authorization", "Basic {0}".format(self.b64a))
-        if head: 
+        header = "Basic {0}".format(self.b64a) if self.ath == 'basic' else "key {0}".format(self.key)
+        self.getRequest().add_header("Authorization", header)
+           
+        # Add user header if provided 
+        if head:
             self.getRequest().add_header(shlex.split(head)[0].strip("(),"),shlex.split(head)[1].strip("(),"))
-        
-        if data: #or true for testing
-            #adding a data component in urllib2 switches request from GET to POST
+            
+        # Add user data if provided
+        if data: #or true #for testing
+            #NB. adding a data component in urllib2 switches request from GET to POST
             data = urllib.urlencode(data)
             self.getRequest().add_data(data)
+            
         urllib2.install_opener(self.opener(self.openerstrs_ntlm))
         retry = MAX_RETRY_ATTEMPTS
         while retry:
@@ -285,33 +304,34 @@ class LDSAPI(object):
 # GET
 # /services/api/v1/layers/{id}/versions/draft/
 # Get a link to the draft version for a layer or table.
- 
+
 # GET
 # /services/api/v1/layers/{id}/versions/published/
 # Get a link to the current published version for a layer or table.
- 
+
 # GET
 # /services/api/v1/layers/{id}/versions/{version}/
 # Get the details for a specific layer or table version.
- 
+
 # PUT
 # /services/api/v1/layers/{id}/versions/{version}/
 # Edits this draft layerversion. If it's already published, a 405 response will be returned.
- 
+
 # POST
 # /services/api/v1/layers/{id}/versions/{version}/import/
 # Starts importing this draft layerversion (cancelling any running import), even if the data object hasn't changed from the previous version.
- 
+
 # POST
 # /services/api/v1/layers/{id}/versions/import/
 # A shortcut to create a new version and start importing it.
- 
+
 # POST
 # /services/api/v1/layers/{id}/versions/{version}/publish/
 # Creates a publish task just for this version, which publishes as soon as any import is complete.
- 
+
 # DELETE
 # /services/api/v1/layers/{id}/versions/{version}/
+
 
 class DataAPI(LDSAPI):
     path_ref = {'list':
@@ -352,10 +372,10 @@ class DataAPI(LDSAPI):
                         {'dgt_users':'/services/api/v2/users/'}#this of course doesn't work
                   }
     
-    def __init__(self,creds,cfile):
-        super(DataAPI,self).__init__(creds,cfile)
+    def __init__(self):
+        super(DataAPI,self).__init__()
         
-    def setParams(self,sec='list',pth='dgt_data',host='lds-l',format='json',id=None, version=None, type=None):
+    def setParams(self, sec='list', pth='dgt_data', host=LDSAPI.url_def, format='json', id=None, version=None, type=None):
         self.format = format
         self.path = self.path_ref[sec][pth]+'?format={0}'.format(self.format)
         
@@ -363,7 +383,7 @@ class DataAPI(LDSAPI):
         if version and re.search('{version}',self.path): self.path = self.path.replace('{version}',str(version))
         if type and re.search('{type}',self.path): self.path = self.path.replace('{type}',str(type))
         
-        self.host = super(DataAPI,self).url[host]
+        self.host = super(DataAPI, self).url[host]
         
 class SourceAPI(LDSAPI):
     path_ref = {'list':
@@ -392,8 +412,8 @@ class SourceAPI(LDSAPI):
                      'sgt_groupid':'/services/api/v1/groups/{id}/'}
                 }
     
-    def __init__(self,creds,cfile):
-        super(SourceAPI,self).__init__(creds,cfile)
+    def __init__(self):
+        super(SourceAPI,self).__init__()
         
     def setParams(self,sec='list',pth='sgt_sources',host='lds-l',format='json',id=None,type=None,source_id=None,scan_id=None,datasource_id=None):
         self.format = format
@@ -435,8 +455,8 @@ class RedactionAPI(LDSAPI):
                     {'rgt_info':'/services/api/v1/layers/{id}/redactions/{redaction}/'}
                 }
     
-    def __init__(self,creds,cfile):
-        super(RedactionAPI,self).__init__(creds,cfile)
+    def __init__(self):
+        super(RedactionAPI,self).__init__()
         
     def setParams(self,sec='list',pth='rgt_disp',h='lds-l',format='json',id=None,redaction=None):
         self.format = format
@@ -449,11 +469,17 @@ class RedactionAPI(LDSAPI):
         self.host = super(RedactionAPI,self).url[h]
         
 class APIAccess(object):
-    def __init__(self,apit,creds,ap_creds):
-        self.api = apit(creds,ap_creds)
-            
+    defs = (LDSAPI.url_def, LDSAPI.pxy_def, LDSAPI.ath_def)
+    
+    def __init__(self, apit, creds, cfile, refs):
+        self.api = apit() # Set a data, src or redact api
+        self.uref,self.pref,self.aref = refs
+        self.api.setProxyRef(self.pref)
+        self.api.setAuthentication(creds, cfile, self.aref)
+
+
     def readAllPages(self):
-        self.api.setParams(sec='list',pth=self.path,host='lds-l')
+        self.api.setParams(sec='list',pth=self.path,host=self.uref)
         return self.api.fetchPages()
         
     def readAllIDs(self):
@@ -462,10 +488,11 @@ class APIAccess(object):
     
 class SourceAccess(APIAccess):
     '''Convenience class for accessing sourceapi data'''
-    def __init__(self,creds,ap_creds):
-        super(SourceAccess,self).__init__(SourceAPI,creds,ap_creds)
+    def __init__(self,creds,ap_creds, uref=LDSAPI.url_def, pref=LDSAPI.pxy_def, aref=LDSAPI.ath_def):
+        super(SourceAccess,self).__init__(SourceAPI,creds,ap_creds, (uref, pref, aref))
         self.path = 'sgt_sources'
-        
+
+    #TODO. Implement these functions
     def writeDetailFields(self):
         pass
     def writePermissionFields(self):
@@ -477,10 +504,11 @@ class SourceAccess(APIAccess):
     
 class RedactionAccess(APIAccess):
     '''Convenience class for redacting api data'''
-    def __init__(self,creds,ap_creds):
-        super(RedactionAccess,self).__init__(RedactionAPI,creds,ap_creds)
+    def __init__(self,creds,ap_creds, uref=LDSAPI.url_def, pref=LDSAPI.pxy_def, aref=LDSAPI.ath_def):
+        super(RedactionAccess,self).__init__(RedactionAPI,creds,ap_creds, (uref, pref, aref))
         self.path = 'sgt_sources'
-        
+
+    #TODO. Implement these functions
     def redactDetailFields(self):
         pass
     def redactPermissionFields(self):
@@ -493,8 +521,8 @@ class RedactionAccess(APIAccess):
 class DataAccess(APIAccess):
     '''Convenience class for accessing commonly needed data-api data'''
     
-    def __init__(self,creds,ap_creds):
-        super(DataAccess,self).__init__(DataAPI,creds,ap_creds)
+    def __init__(self, creds, cfile, uref=LDSAPI.url_def, pref=LDSAPI.pxy_def, aref=LDSAPI.ath_def):
+        super(DataAccess, self).__init__(DataAPI, creds, cfile, (uref, pref, aref))
         self.path = 'dgt_layers'
         self.dpath = 'dgt_layers'
         self.ppath = 'dgt_permissions'
@@ -592,7 +620,59 @@ class DataAccess(APIAccess):
         d,_ = self.readSelectedFields(pagereq=('data',))
         res = [i for i in d]
         print (res)
+
+'''Copied from LDSChecker for availability'''
+        
+class Authentication(object):
+    '''Static methods to read keys/user/pass from files'''
     
+    @staticmethod
+    def userpass(upfile):
+        return (Authentication.searchfile(upfile,'username'),Authentication.searchfile(upfile,'password'))
+        
+    @staticmethod
+    def apikey(kfile,kk='key'):
+        '''Returns current key from a keyfile advancing KEYINDEX on subsequent calls'''
+        global KEYINDEX
+        key = Authentication.searchfile(kfile,'{0}{1}'.format(kk,KEYINDEX))
+        if not key:
+            KEYINDEX = 0
+            key = Authentication.searchfile(kfile,'{0}{1}'.format(kk,KEYINDEX))
+        else:
+            KEYINDEX += 1
+        return key
+    
+    @staticmethod
+    def creds(cfile):
+        '''Read CIFS credentials file'''
+        return (Authentication.searchfile(cfile,'username'),\
+                Authentication.searchfile(cfile,'password'),\
+                Authentication.searchfile(cfile,'domain','WGRP'))
+    
+    @staticmethod
+    def searchfile(sfile,skey,default=None):
+        #value = default
+        #look in current then app then home
+        spath = ('',os.path.expanduser('~'),os.path.dirname(__file__))
+        first = [os.path.join(p,sfile) for p in spath if os.path.exists(os.path.join(p,sfile))][0]
+        with open(first,'r') as h:
+            for line in h.readlines():
+                k = re.search('^{key}=(.*)$'.format(key=skey),line)
+                if k: return k.group(1)
+        return default
+    
+    @staticmethod
+    def getHeader(korb,kfile):
+        '''Convenience method for auth header'''
+        if korb.lower() == 'basic':
+            b64s = base64.encodestring('{0}:{1}'.format(*Authentication.userpass(kfile))).replace('\n', '')
+            return ('Authorization', 'Basic {0}'.format(b64s))
+        elif korb.lower() == 'key':
+            key = Authentication.apikey(kfile)
+            return ('Authorization', 'key {0}'.format(key))
+        return None # Throw something
+
+
 class APIFunctionTest(object):
     '''Class will not run as-is but illustrates by example api use and the paging mechanism'''
     credsfile = '../.credentials'

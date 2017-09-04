@@ -1,5 +1,6 @@
 '''
 Created on 23/12/2013
+I think the version of the ldsapi was build to test the Kx API features and link to/through them
 
 @author: jramsay
 '''
