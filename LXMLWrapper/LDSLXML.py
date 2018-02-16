@@ -16,8 +16,8 @@ if PYVER3:
     import urllib.request as u_lib
     from urllib.error import HTTPError
 else:
-    #import urllib2 as u_lib
-    #from urllib2 import HTTPError
+    import urllib2 as u_lib
+    from urllib2 import HTTPError
     pass
 
 from lxml import etree
